@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heisenbot</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- MODAL DE CONFIGURAÇÕES -->
+  <div class="modal-overlay" id="modal-configuracoes">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚙️ CONFIGURAÇÕES DO SISTEMA</h3>
+        <button class="btn-close-modal" id="btn-close-config">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="config-item">
+          <label for="select-model">Modelo de IA</label>
+          <select id="select-model">
+            <option value="gemini-flash">Gemini 1.5 Flash (Rápido)</option>
+            <option value="gemini-pro">Gemini 1.5 Pro (Avançado)</option>
+          </select>
+        </div>
+
+        <div class="config-item">
+          <label for="input-apikey">Chave de API (Gemini Key)</label>
+          <input type="password" id="input-apikey" placeholder="AIzaSy..." autocomplete="off">
+        </div>
+
+        <div class="config-item checkbox-item">
+          <label for="check-stream">Respostas em Tempo Real (Streaming)</label>
+          <input type="checkbox" id="check-stream" checked>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-save" id="btn-save-config">SALVAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE ASSINATURA PRO -->
+  <div class="modal-overlay" id="modal-upgrade">
+    <div class="modal-content modal-upgrade-content">
+      <div class="modal-header">
+        <h3>👨‍🍳 HEISENBOT PRO // R$ 19,98 /mês</h3>
+        <button class="btn-close-modal" id="btn-close-upgrade">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="upgrade-benefits">
+          <p class="benefit-title">BENEFÍCIOS DO PLANO PRO:</p>
+          <ul>
+            <li>🧪 Acesso ilimitado ao Gemini 1.5 Pro</li>
+            <li>⚡ Respostas com tempo de resposta prioritário</li>
+            <li>💎 Garantia de Pureza de 99.6% nas fórmulas</li>
+            <li>📁 Upload e análise avançada de arquivos</li>
+          </ul>
+        </div>
+
+        <hr class="modal-divider">
+
+        <form id="form-checkout" class="checkout-form">
+          <div class="config-item">
+            <label>Nome no Cartão</label>
+            <input type="text" placeholder="WALTER WHITE" required autocomplete="off">
+          </div>
+
+          <div class="config-item">
+            <label>Número do Cartão</label>
+            <input type="text" placeholder="0000 0000 0000 0000" maxlength="19" required autocomplete="off">
+          </div>
+
+          <div class="checkout-row">
+            <div class="config-item">
+              <label>Validade</label>
+              <input type="text" placeholder="MM/AA" maxlength="5" required autocomplete="off">
+            </div>
+            <div class="config-item">
+              <label>CVC</label>
+              <input type="password" placeholder="123" maxlength="4" required autocomplete="off">
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" form="form-checkout" class="btn-save btn-checkout">ASSINAR AGORA (R$ 19,98)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTAINER PRINCIPAL -->
+  <div class="app-container">
+
+    <!-- BARRA LATERAL (SIDEBAR) -->
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>HEISENBOT</h1>
+        <span>V0.1-BETA</span>
+      </div>
+
+      <button class="btn-upgrade">👨‍🍳 Vire um cozinheiro profissional</button>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="active"><button id="btn-nova-ideia">🧪 Nova ideia</button></li>
+          <li><button id="btn-historico">👮 Histórico</button></li>
+          <li><button id="btn-configuracoes">⚙️ Configurações</button></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="main-content">
+      
+      <!-- Cabeçalho Superior -->
+      <header class="top-bar">
+        <div class="brand-badge">Ch</div>
+        <div class="top-actions">
+          <button class="icon-btn" id="btn-clear" title="Limpar Chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+          </button>
+          <button class="icon-btn" id="btn-notify" title="Notificações">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+          </button>
+          <div class="user-avatar-circle">U</div>
+        </div>
+      </header>
+
+      <!-- Área Central -->
+      <section class="chat-wrapper" id="chat-wrapper">
+        <div class="welcome-screen" id="welcome-screen">
+          <h2 class="welcome-title">VAMOS COZINHAR!</h2>
+
+          <div class="central-input-box">
+            <form class="chat-form" id="chat-form">
+              <button type="button" class="btn-attach" title="Anexar arquivo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
+
+              <input type="text" id="user-input" placeholder="Insira a fórmula ou comando..." required autocomplete="off" />
+
+              <button type="submit" class="btn-send">
+                <span>EXECUTE</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </form>
+            
+            <span class="security-info">SECURED CONNECTION // AES-256</span>
+          </div>
+        </div>
+
+        <!-- Área onde as mensagens da conversa serão exibidas -->
+        <div class="chat-messages" id="chat-messages" style="display: none;"></div>
+      </section>
+
+      <!-- Input de Rodapé (quando o chat estiver ativo) -->
+      <footer class="bottom-input-bar" id="bottom-input-bar" style="display: none;">
+        <div class="central-input-box">
+          <form class="chat-form" id="chat-form-bottom">
+            <button type="button" class="btn-attach" title="Anexar arquivo">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </button>
+
+            <input type="text" id="user-input-bottom" placeholder="Insira a fórmula ou comando..." required autocomplete="off" />
+
+            <button type="submit" class="btn-send">
+              <span>EXECUTE</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </form>
+          <span class="security-info">SECURED CONNECTION // AES-256</span>
+        </div>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
