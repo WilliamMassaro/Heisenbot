@@ -1,9 +1,3 @@
-// ⚠️ CONFIGURAÇÃO COM ASPAS NA CHAVE
-const AZURE_CONFIG = {
-  url: "https://chatuhul.openai.azure.com/openai/v1/chat/completions",
-  apiKey: "", // 👈 Coloque sua chave entre as aspas
-  model: "gpt-4.1-mini"
-};
 
 // Base de Dados Simulada de Histórico
 let historicoConversas = [
