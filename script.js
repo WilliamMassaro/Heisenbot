@@ -1,3 +1,13 @@
+// Configuração base que será preenchida automaticamente pelo keys.json
+let AZURE_CONFIG = {
+  apiKey: "",
+  endpoint: "",
+  deployment: "",
+  apiVersion: "2024-06-01"
+};
+
+// Histórico retido em memória para a IA não perder o contexto da conversa
+let historicoAtivo = [];
 
 // Base de Dados Simulada de Histórico
 let historicoConversas = [
@@ -5,7 +15,28 @@ let historicoConversas = [
   { id: 2, titulo: "Script em Python para Automação", data: "22/08/2026" }
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
+// Função para carregar as chaves do arquivo keys.json
+async function carregarConfiguracoes() {
+  try {
+    const response = await fetch('./keys.json');
+    if (!response.ok) throw new Error('Não foi possível ler o arquivo keys.json');
+    
+    const keys = await response.json();
+    AZURE_CONFIG.apiKey = keys.AZURE_OPENAI_KEY || "";
+    AZURE_CONFIG.endpoint = keys.AZURE_OPENAI_ENDPOINT || "";
+    AZURE_CONFIG.deployment = keys.AZURE_OPENAI_DEPLOYMENT || "";
+    AZURE_CONFIG.apiVersion = keys.AZURE_OPENAI_API_VERSION || "2024-06-01";
+
+    console.log("✅ Configurações do Azure carregadas com sucesso a partir do keys.json!");
+  } catch (error) {
+    console.warn("⚠️ Não foi possível carregar keys.json automaticamente. Certifique-se de que o arquivo está na raiz ou insira os dados no menu de configurações.", error);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Carrega as credenciais ao iniciar
+  await carregarConfiguracoes();
+
   // Elementos principais da Interface
   const chatWrapper = document.getElementById('chat-wrapper');
   const welcomeScreen = document.getElementById('welcome-screen');
@@ -29,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalConfig = document.getElementById('modal-configuracoes');
   const btnCloseConfig = document.getElementById('btn-close-config');
   const btnSaveConfig = document.getElementById('btn-save-config');
+  const inputApiKey = document.getElementById('input-apikey');
 
   const modalUpgrade = document.getElementById('modal-upgrade');
   const btnCloseUpgrade = document.getElementById('btn-close-upgrade');
@@ -54,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function abrirNovaIdeia() {
     limparTelasDinamicas();
+    historicoAtivo = [];
     if (chatMessages) {
       chatMessages.innerHTML = '';
       chatMessages.style.display = 'none';
@@ -100,17 +133,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatWrapper) chatWrapper.appendChild(painel);
   }
 
-  // --- REQUISIÇÃO DIRETA À API DO AZURE ---
+  // --- REQUISIÇÃO À API DO AZURE OPENAI ---
 
   async function enviarMensagem(texto) {
     if (!texto) return;
+
+    if (!AZURE_CONFIG.apiKey || !AZURE_CONFIG.endpoint || !AZURE_CONFIG.deployment) {
+      alert("Configure a Chave API, Endpoint e Deployment no keys.json ou no menu de Configurações antes de continuar.");
+      if (modalConfig) modalConfig.classList.add('active');
+      return;
+    }
 
     limparTelasDinamicas();
 
     if (welcomeScreen && welcomeScreen.style.display !== 'none') {
       welcomeScreen.style.display = 'none';
       if (chatMessages) chatMessages.style.display = 'flex';
-      if (bottomInputBar) bottomInputBar.style.display = 'block';
+      if (bottomInputBar) bottomInputBar.style.display = 'flex';
 
       historicoConversas.unshift({
         id: Date.now(),
@@ -119,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    // Exibe a mensagem do usuário
     const userMsg = document.createElement('div');
     userMsg.className = 'message-bubble user-message';
     userMsg.innerHTML = `
@@ -127,6 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     if (chatMessages) chatMessages.appendChild(userMsg);
 
+    historicoAtivo.push({ role: "user", content: texto });
+
+    // Mensagem temporária do bot
     const botMsg = document.createElement('div');
     botMsg.className = 'message-bubble bot-message';
     botMsg.innerHTML = `
@@ -136,26 +179,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatMessages) chatMessages.appendChild(botMsg);
     if (chatWrapper) chatWrapper.scrollTop = chatWrapper.scrollHeight;
 
+    const payloadMessages = [
+      {
+        role: "system",
+        content: "Você é o Heisenbot, uma IA inspirada no universo de Breaking Bad e química. Responda de forma direta, com tom misterioso, inteligente e científico."
+      },
+      ...historicoAtivo
+    ];
+
+    // Construção dinâmica da URL do Azure OpenAI
+    const endpointLimpo = AZURE_CONFIG.endpoint.replace(/\/$/, "");
+    const urlFormatada = `${endpointLimpo}/openai/deployments/${AZURE_CONFIG.deployment}/chat/completions?api-version=${AZURE_CONFIG.apiVersion}`;
+
     try {
-      const response = await fetch(AZURE_CONFIG.url, {
+      const response = await fetch(urlFormatada, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'api-key': AZURE_CONFIG.apiKey
         },
         body: JSON.stringify({
-          model: AZURE_CONFIG.model,
-          messages: [
-            {
-              role: "system",
-              content: "Você é o Heisenbot, uma IA inspirada no universo de Breaking Bad e química. Responda de forma direta, com tom misterioso, inteligente e científico."
-            },
-            {
-              role: "user",
-              content: texto
-            }
-          ],
-          temperature: 1
+          messages: payloadMessages,
+          temperature: 0.7
         })
       });
 
@@ -166,10 +211,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const respostaTexto = data.choices?.[0]?.message?.content || "Nenhuma resposta retornada.";
+      
+      historicoAtivo.push({ role: "assistant", content: respostaTexto });
       botMsg.querySelector('.message-text').innerHTML = respostaTexto.replace(/\n/g, '<br>');
 
     } catch (error) {
       console.error("Erro na requisição:", error);
+      historicoAtivo.pop();
       botMsg.querySelector('.message-text').innerHTML = `⚠️ <strong>[ERRO DE CONEXÃO]</strong> ${error.message}`;
     }
 
@@ -229,6 +277,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnSaveConfig) {
     btnSaveConfig.addEventListener('click', () => {
+      if (inputApiKey && inputApiKey.value.trim() !== "") {
+        AZURE_CONFIG.apiKey = inputApiKey.value.trim();
+      }
       alert('Configurações salvas!');
       modalConfig?.classList.remove('active');
     });
